@@ -1,0 +1,49 @@
+spring:
+  # H2 内存数据库
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:life_archive;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+
+  # H2 Console
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # 初始化 SQL
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+  # 关闭 Redis 自动配置（开发环境不需要）
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+# 应用自定义配置
+app:
+  jwt:
+    secret: ${LIFEARCHIVE_JWT_SECRET:life-archive-jwt-dev-secret-2024}
+    expiration: 86400000
+
+  upload:
+    path: ./upload/
+
+  ai:
+    llm:
+      enabled: true
+      api-key: ${DEEPSEEK_API_KEY:}  # 密钥通过环境变量注入，勿写死进源码
+      base-url: https://api.deepseek.com
+      model: deepseek-chat
+      max-tokens: 500
+      temperature: 0.7
+    rag:
+      max-retrieve: 3
+      max-context-chars: 600
+      max-history: 10
+    story:
+      max-memories: 10

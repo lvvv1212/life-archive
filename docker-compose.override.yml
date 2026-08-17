@@ -1,0 +1,13 @@
+# ============================================================
+# LifeArchive 微信小程序：docker-compose 覆盖配置
+# 作用：在不修改 docker-compose.yml 的前提下，向 backend 注入微信小程序凭证。
+# docker 会自动合并 docker-compose.yml + 本文件。
+# 真实凭证请填写同目录 .env 的 WX_APPID / WX_SECRET。
+# 留空时后端走开发态 mock 登录（无需真实小程序账号也可联调）。
+# ============================================================
+services:
+  backend:
+    environment:
+      WX_APPID: ${WX_APPID}
+      WX_SECRET: ${WX_SECRET}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}

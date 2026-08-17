@@ -1,0 +1,20 @@
+#!/bin/sh
+# Maven Wrapper Start Script
+
+# Determine the Java command to use
+if [ -n "$JAVA_HOME" ] ; then
+    JAVACMD="$JAVA_HOME/bin/java"
+else
+    JAVACMD="java"
+fi
+
+# Find the basedir
+BASEDIR=$(cd "$(dirname "$0")" && pwd)
+export MAVEN_PROJECTBASEDIR="$BASEDIR"
+
+# Execute the Maven wrapper
+exec "$JAVACMD" \
+  -Dmaven.multiModuleProjectDirectory="$MAVEN_PROJECTBASEDIR" \
+  -classpath "$BASEDIR/.mvn/wrapper/maven-wrapper.jar" \
+  org.apache.maven.wrapper.MavenWrapperMain \
+  "$@"

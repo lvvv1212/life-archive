@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: life-archive
+
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/life_archive?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true
+    username: root
+    password: root
+
+  # Redis 配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      timeout: 3000ms
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 200MB
+
+# 服务器配置
+server:
+  port: 8080
+
+# MyBatis Plus 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 应用自定义配置
+app:
+  jwt:
+    secret: ${LIFEARCHIVE_JWT_SECRET:life-archive-jwt-dev-secret-2024}
+    expiration: 86400000  # 24小时
+
+  upload:
+    path: /app/upload/
+
+  # AI 配置
+  ai:
+    llm:
+      enabled: true            # 已启用 DeepSeek
+      api-key: ${DEEPSEEK_API_KEY:}  # 密钥通过环境变量注入，勿写死进源码（docker 由 .env 提供）
+      base-url: https://api.deepseek.com
+      model: deepseek-chat     # deepseek-chat (V3) 或 deepseek-reasoner (R1)
+      max-tokens: 500          # 单次回答最大 token 数
+      temperature: 0.7
+    rag:
+      max-retrieve: 3          # RAG 检索最多匹配记忆数
+      max-context-chars: 600   # 每条记忆最大送入字符数
+      max-history: 10          # 对话历史最多保留条数
+    story:
+      max-memories: 10         # 故事生成最多参考记忆数

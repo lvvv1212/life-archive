@@ -1,0 +1,296 @@
+/* ============================================
+   LifeArchive 动效系统 — Warm Film 温柔时光
+   胶片颗粒 · 拍立得散落 · 邮票 · 缝线 · 泛黄滤镜
+   ============================================ */
+
+/* ── 1. 胶片颗粒噪点动画 ── */
+@keyframes grain-shift {
+  0%, 100% { transform: translate(0, 0); }
+  10%  { transform: translate(-1%, -1%); }
+  30%  { transform: translate(1%, 0.5%); }
+  50%  { transform: translate(-0.5%, 1%); }
+  70%  { transform: translate(0.5%, -0.5%); }
+  90%  { transform: translate(-0.5%, 0.5%); }
+}
+.film-grain {
+  position: relative;
+  overflow: hidden;
+}
+.film-grain::after {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  animation: grain-shift 0.5s steps(3) infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── 2. 拍立得散落入场 ── */
+@keyframes polaroid-drop {
+  0%   { opacity: 0; transform: translateY(-30px) rotate(var(--tilt, 0deg)) scale(0.9); }
+  60%  { opacity: 1; transform: translateY(4px) rotate(var(--tilt, 0deg)) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) rotate(var(--tilt, 0deg)) scale(1); }
+}
+.polaroid-in {
+  animation: polaroid-drop 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* ── 3. 邮票邮戳样式 ── */
+.postmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border: 2px dashed var(--color-primary);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  background: rgba(232, 137, 75, 0.04);
+  position: relative;
+  min-width: 64px;
+  min-height: 64px;
+  letter-spacing: 1px;
+}
+.postmark::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px dashed rgba(232, 137, 75, 0.3);
+  border-radius: 50%;
+}
+.postmark::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle at center, transparent, transparent 3px, rgba(232,137,75,0.08) 3px, rgba(232,137,75,0.08) 4px);
+  pointer-events: none;
+}
+
+/* ── 4. 缝线动画 ── */
+@keyframes stitch-draw {
+  to { stroke-dashoffset: 0; }
+}
+.stitch-line {
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  stroke-dashoffset: 1000;
+  animation: stitch-draw 2s ease-in-out forwards;
+  fill: none;
+}
+
+/* ── 5. 浮动动画（柔和版） ── */
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+.float { animation: float-gentle 3.5s ease-in-out infinite; }
+.float-slow { animation: float-gentle 5.5s ease-in-out infinite; }
+
+/* ── 6. 胶片卷入动画 ── */
+@keyframes film-roll-in {
+  0%   { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+.film-reveal {
+  animation: film-roll-in 0.8s ease-out forwards;
+}
+
+/* ── 7. 打字机光标 ── */
+@keyframes blink-caret {
+  0%, 100% { border-color: transparent; }
+  50%      { border-color: var(--color-primary); }
+}
+.typewriter {
+  border-right: 3px solid var(--color-primary);
+  animation: blink-caret 0.8s step-end infinite;
+  display: inline-block;
+}
+
+/* ── 8. 卡片入场淡入上移 ── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-in > * {
+  opacity: 0;
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+.stagger-in > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.14s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.20s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.26s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.32s; }
+.stagger-in > *:nth-child(7) { animation-delay: 0.38s; }
+.stagger-in > *:nth-child(8) { animation-delay: 0.44s; }
+
+/* ── 9. 淡入缩放 ── */
+@keyframes fade-scale {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.fade-scale-in {
+  animation: fade-scale 0.4s ease-out forwards;
+}
+
+/* ── 10. 呼吸脉冲 ── */
+@keyframes breathe-warm {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 137, 75, 0.3); }
+  50%      { box-shadow: 0 0 0 10px rgba(232, 137, 75, 0); }
+}
+.breathe {
+  animation: breathe-warm 3s ease-in-out infinite;
+}
+
+/* ── 11. 卡牌悬停微倾斜 ── */
+.tilt-hover {
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+.tilt-hover:hover {
+  transform: perspective(600px) rotateX(1.5deg) rotateY(-1.5deg) scale(1.02);
+  box-shadow: 0 8px 30px rgba(139, 90, 43, 0.12), 0 3px 10px rgba(139, 90, 43, 0.06);
+}
+
+/* ── 12. 旋转几何装饰 ── */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.spin-slow { animation: spin-slow 24s linear infinite; }
+.spin-medium { animation: spin-slow 14s linear infinite reverse; }
+
+/* ── 13. 光晕扫描 ── */
+@keyframes warm-scan {
+  0%    { left: -150%; }
+  100%  { left: 150%; }
+}
+.warm-shine {
+  position: relative;
+  overflow: hidden;
+}
+.warm-shine::after {
+  content: '';
+  position: absolute;
+  top: -2px; left: -150%;
+  width: 40%;
+  height: calc(100% + 4px);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.12) 30%,
+    rgba(255,255,255,0.25) 50%,
+    rgba(255,255,255,0.12) 70%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  animation: warm-scan 3.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── 14. 统计数字弹跳 ── */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.count-anim {
+  animation: count-up 0.5s ease-out forwards;
+}
+
+/* ── 15. 思考中省略号 ── */
+.dots::after {
+  content: '...';
+  animation: dot-ani 1.5s steps(4) infinite;
+}
+@keyframes dot-ani {
+  0%   { content: '.'; }
+  33%  { content: '..'; }
+  66%  { content: '...'; }
+}
+
+/* ── 16. 流光下划线 ── */
+@keyframes shimmer-line {
+  0%    { background-position: 0% 50%; }
+  100%  { background-position: 200% 50%; }
+}
+.shimmer-border {
+  position: relative;
+}
+.shimmer-border::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%, var(--color-primary) 25%,
+    var(--color-accent) 50%, var(--color-primary) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-line 3s linear infinite;
+}
+
+/* ── 17. 照片显影效果 ── */
+@keyframes develop {
+  0%   { filter: brightness(0) sepia(1) saturate(0); }
+  50%  { filter: brightness(0.5) sepia(0.8) saturate(0.5); }
+  100% { filter: brightness(1) sepia(0.08) saturate(1); }
+}
+.photo-develop {
+  animation: develop 1.2s ease-out forwards;
+}
+
+/* ── 18. 书页翻动 ── */
+@keyframes page-turn {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(-5deg); }
+}
+.page-turn-hover {
+  transform-origin: left center;
+  transition: transform 0.5s ease-out;
+}
+.page-turn-hover:hover {
+  transform: rotateY(-3deg);
+}
+
+/* ── 19. 卡片光标聚光 + 微倾斜（v-tilt 指令）── */
+.card-interactive {
+  transform-style: preserve-3d;
+  transition: transform 0.18s ease-out, box-shadow 0.18s ease-out;
+  will-change: transform;
+}
+.card-interactive::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 248, 240, 0.35),
+    rgba(232, 137, 75, 0.10) 35%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 4;
+}
+.card-interactive:hover::after { opacity: 1; }
+
+/* ── Accessibility ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

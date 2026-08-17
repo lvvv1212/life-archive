@@ -1,0 +1,201 @@
+/* ============================================
+   LifeArchive Design System — Warm Film 温柔时光
+   胶片相册 · 拍立得 · 怀旧纸质
+   ============================================ */
+
+:root {
+  /* ── 主色调：暖琥珀 + 奶油底 ── */
+  --color-primary:       #E8894B;
+  --color-primary-light: #F0A76B;
+  --color-primary-dark:  #C56E38;
+  --color-accent:        #D4956B;
+  --color-accent-soft:   #E8C9A8;
+
+  /* ── 背景：不同层次的暖白纸色 ── */
+  --bg-base:      #FFF8F0;
+  --bg-cream:     #FFFDF9;
+  --bg-warm:      #FFF5EB;
+  --bg-paper:     #FDF6EC;
+  --bg-card:      #FFFEFA;
+  --bg-white:      #FFFFFF;
+
+  /* ── 侧边栏：深胡桃木色 ── */
+  --sidebar-bg:    #3D2B1F;
+  --sidebar-hover: #5A3D2E;
+  --sidebar-text:  #D4B896;
+  --sidebar-active:#E8894B;
+
+  /* ── 文字色 ── */
+  --text-primary:   #4A3528;
+  --text-secondary: #8B7355;
+  --text-muted:     #B8A088;
+  --text-white:     #FFFFFF;
+  --text-ink:       #3C2A1E;
+
+  /* ── 圆角：柔和但不过度 ── */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+
+  /* ── 阴影：暖色投影 ── */
+  --shadow-sm:  0 2px 6px rgba(139, 90, 43, 0.06);
+  --shadow-md:  0 4px 14px rgba(139, 90, 43, 0.10);
+  --shadow-lg:  0 8px 28px rgba(139, 90, 43, 0.12);
+  --shadow-card: 0 2px 10px rgba(100, 60, 30, 0.05);
+  --shadow-polaroid: 0 3px 12px rgba(100, 60, 30, 0.08), 0 1px 3px rgba(0,0,0,0.04);
+
+  /* ── 渐变：暖色系 ── */
+  --gradient-warm:   linear-gradient(135deg, #E8894B 0%, #D4956B 100%);
+  --gradient-sunset: linear-gradient(135deg, #E8894B 0%, #C56E38 50%, #D4956B 100%);
+  --gradient-soft:   linear-gradient(135deg, #F0A76B 0%, #E8C9A8 100%);
+  --gradient-hero:   linear-gradient(135deg, #FFF5EB 0%, #FDE8D0 40%, #FFF0E5 100%);
+
+  /* ── 过渡 ── */
+  --transition-fast: 150ms ease-out;
+  --transition-base: 300ms ease-out;
+  --transition-slow: 500ms ease-out;
+
+  /* ── 字体 ── */
+  --font-display: 'Noto Serif SC', 'STSong', 'SimSun', 'Songti SC', serif;
+  --font-body:    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-hand:    'ZCOOL KuaiLe', 'KaiTi', 'STKaiti', cursive;
+}
+
+/* ── 全局重置 ── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── 纸张纹理背景 ── */
+.bg-paper {
+  position: relative;
+  background: var(--bg-paper);
+}
+.bg-paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139,90,43,0.3) 2px, rgba(139,90,43,0.3) 3px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── 胶片颗粒叠层 ── */
+.grain-overlay {
+  position: relative;
+}
+.grain-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── 通用卡片 ── */
+.card-warm {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(200, 160, 120, 0.15);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.card-warm:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ── 拍立得卡片 ── */
+.card-polaroid {
+  background: var(--bg-white);
+  border-radius: 4px;
+  box-shadow: var(--shadow-polaroid);
+  padding: 12px 12px 28px 12px;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  position: relative;
+}
+.card-polaroid:hover {
+  transform: translateY(-3px) rotate(var(--tilt, 0deg));
+  box-shadow: 0 6px 20px rgba(100, 60, 30, 0.12), 0 2px 6px rgba(0,0,0,0.05);
+}
+.card-polaroid .polaroid-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 2px;
+  filter: sepia(0.08) brightness(1.02);
+}
+.card-polaroid .polaroid-caption {
+  text-align: center;
+  font-family: var(--font-hand);
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+/* ── 通用按钮 ── */
+.btn-primary {
+  background: var(--gradient-warm) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-base) !important;
+  box-shadow: 0 3px 12px rgba(232, 137, 75, 0.3) !important;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(232, 137, 75, 0.4) !important;
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(200, 150, 100, 0.25);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(200, 150, 100, 0.4);
+}
+
+/* ── 选中文字色 ── */
+::selection {
+  background: rgba(232, 137, 75, 0.18);
+  color: var(--text-primary);
+}
+
+/* ── 装饰圆点 ── */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(60px);
+  opacity: 0.12;
+  z-index: 0;
+}
+.orb-1 { width: 240px; height: 240px; background: #E8894B; top: -60px; left: -40px; }
+.orb-2 { width: 200px; height: 200px; background: #D4956B; bottom: -40px; right: -30px; }
+.orb-3 { width: 140px; height: 140px; background: #F0A76B; top: 40%; left: 55%; }

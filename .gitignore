@@ -1,0 +1,25 @@
+# 密钥与本地配置
+.env
+*.local
+
+# 项目级本地记忆 / WorkBuddy 数据
+.workbuddy/
+
+# 构建产物
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# 上传文件（本地运行时）
+upload/
+backend/upload/
+
+# IDE / 系统文件
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
