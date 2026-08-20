@@ -109,6 +109,18 @@ docker compose up -d
 - 不设置 `DEEPSEEK_API_KEY` 时，AI 功能自动降级为规则引擎，其余功能不受影响。需要完整 AI 能力时设置环境变量后重启后端：
   - PowerShell：`$env:DEEPSEEK_API_KEY="你的密钥"`
   - cmd：`set DEEPSEEK_API_KEY=你的密钥`
+- RAG 记忆检索使用**本地 ONNX 向量化模型**（`all-MiniLM-L6-v2`，替代原先的词频伪语义方案）：应用**启动时**下载约 90MB 模型（默认从 Hugging Face 拉取，jar 内置 LFS 指针），下载后缓存到 `~/.cache/spring-ai`、之后离线可用；无需任何 embedding API Key。若下载失败（国内网络），在 `backend/src/main/resources/application.yml` 追加（前缀为单数 `transformer`，可用 hf-mirror 或 ModelScope 等国内源）：
+  ```yaml
+  spring:
+    ai:
+      embedding:
+        transformer:
+          onnx:
+            model-uri: https://hf-mirror.com/onnx/all-MiniLM-L6-v2/resolve/main/model.onnx
+            # 备选（hf-mirror 不可达时）：
+            # model-uri: https://modelscope.cn/models/AI-ModelScope/all-MiniLM-L6-v2/resolve/master/onnx/model.onnx
+            # tokenizer-uri: https://modelscope.cn/models/AI-ModelScope/all-MiniLM-L6-v2/resolve/master/tokenizer.json
+  ```
 - 本机已安装 Maven 3.9+ 的话，可以直接用 `mvn spring-boot:run -Dspring-boot.run.profiles=dev` 替代 `mvnw`。
 
 ### 方式二：本地 MySQL + Redis（与 Docker 环境一致）
@@ -132,7 +144,7 @@ docker compose up -d
 |---|---|
 | `docker-compose.yml` | 定义 mysql / redis / backend 三个服务 |
 | `docker-compose.override.yml` | 注入微信、AI 密钥等环境变量 |
-| `.env` | 存放密钥（微信 AppID/Secret、DeepSeek API Key） |
+| `.env` | 存放密钥与环境变量（微信 AppID/Secret、DeepSeek Key、DB 密码、JWT 密钥） |
 | `sql/init.sql` | 数据库初始化脚本（容器首次启动自动执行） |
 
 > `.env` 已加入 `.gitignore`，如果通过 git 或压缩包交付且没有该文件，AI 功能会自动降级为规则引擎，其余功能不受影响。需要完整 AI 能力时，在项目根目录创建 `.env` 并填入：
@@ -141,6 +153,8 @@ docker compose up -d
 > WX_APPID=你的微信小程序AppID
 > WX_SECRET=你的微信小程序Secret
 > DEEPSEEK_API_KEY=你的DeepSeek密钥
+> DB_PASSWORD=你的MySQL密码          # Docker 一键启动留空则默认 root（仅本地开发）
+> LIFEARCHIVE_JWT_SECRET=你的JWT签名密钥  # 必填，否则 JWT 登录鉴权不可用
 > ```
 
 ---

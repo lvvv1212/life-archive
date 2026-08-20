@@ -27,7 +27,7 @@ spring:
 # 应用自定义配置
 app:
   jwt:
-    secret: ${LIFEARCHIVE_JWT_SECRET:life-archive-jwt-dev-secret-2024}
+    secret: ${LIFEARCHIVE_JWT_SECRET:}
     expiration: 86400000
 
   upload:

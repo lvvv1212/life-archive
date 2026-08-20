@@ -43,7 +43,7 @@ public class LLMClient {
     private long estimatedTokensUsed = 0;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(30))
+            .connectTimeout(Duration.ofSeconds(10))
             .build();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -86,7 +86,7 @@ public class LLMClient {
                     .uri(URI.create(baseUrl + "/chat/completions"))
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + apiKey)
-                    .timeout(Duration.ofSeconds(60))
+                    .timeout(Duration.ofSeconds(30))
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 

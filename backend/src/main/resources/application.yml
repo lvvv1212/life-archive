@@ -7,7 +7,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/life_archive?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true
     username: root
-    password: root
+    password: ${DB_PASSWORD:}
 
   # Redis 配置
   data:
@@ -43,7 +43,7 @@ mybatis-plus:
 # 应用自定义配置
 app:
   jwt:
-    secret: ${LIFEARCHIVE_JWT_SECRET:life-archive-jwt-dev-secret-2024}
+    secret: ${LIFEARCHIVE_JWT_SECRET:}
     expiration: 86400000  # 24小时
 
   upload:
@@ -57,9 +57,9 @@ app:
       base-url: https://api.deepseek.com
       model: deepseek-chat     # deepseek-chat (V3) 或 deepseek-reasoner (R1)
       max-tokens: 500          # 单次回答最大 token 数
-      temperature: 0.7
+      temperature: 0.2
     rag:
-      max-retrieve: 3          # RAG 检索最多匹配记忆数
+      max-retrieve: 8          # RAG 检索最多匹配记忆数（提高召回，避免相关记忆排在第4名之后）
       max-context-chars: 600   # 每条记忆最大送入字符数
       max-history: 10          # 对话历史最多保留条数
     story:

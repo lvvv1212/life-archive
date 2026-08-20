@@ -1,199 +1,114 @@
 package com.lifearchive.service.rag;
 
+import org.springframework.ai.document.Document;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 简易内存向量存储
- * 使用关键词频率向量 + 余弦相似度实现语义检索
- * 后期可替换为 Milvus / Pinecone / Qdrant 等专业向量数据库
+ * 内存向量存储（真实语义向量化）
+ *
+ * <p>内部委托 Spring AI 的 {@link SimpleVectorStore} + 本地 ONNX 向量化模型
+ * （{@code spring-ai-starter-model-transformers}，默认 all-MiniLM-L6-v2）完成
+ * 真正的文本 embedding 与余弦相似度检索，替代原先「词频 + 余弦」的伪语义实现。
+ *
+ * <p>对外 API（{@code put / search / size / clear} 与 {@link SearchResult} 字段）
+ * 与旧实现保持完全一致，调用方（KnowledgeBaseService / RAGService / StoryServiceImpl）
+ * 无需改动。
  */
 @Component
 public class VectorStore {
 
     /**
-     * 文档存储：id → (text, metadata)
+     * Spring AI 向量库（进程内，零外部依赖）。
+     * 类型为 org.springframework.ai.vectorstore.VectorStore，因与本项目类名冲突，此处用全限定名。
      */
-    private final Map<String, DocEntry> docs = new LinkedHashMap<>();
+    private final org.springframework.ai.vectorstore.VectorStore delegate;
 
     /**
-     * 词汇表：word → index
+     * 本地索引：id → Document，用于 size() 统计与 put 时的按 id 覆盖。
+     * SimpleVectorStore 本身不支持按 id 覆盖/更新，因此由本类负责去重。
      */
-    private final Map<String, Integer> vocabulary = new HashMap<>();
+    private final Map<String, Document> docIndex = new HashMap<>();
 
     /**
-     * 文档向量缓存
+     * 注入本地 ONNX 向量化模型（由 spring-ai-starter-model-transformers 自动配置）。
      */
-    private final Map<String, double[]> vectors = new HashMap<>();
-
-    private boolean vocabBuilt = false;
+    public VectorStore(EmbeddingModel embeddingModel) {
+        this.delegate = SimpleVectorStore.builder(embeddingModel).build();
+    }
 
     /**
-     * 存储文档
+     * 存储 / 覆盖文档。
+     * 若同一 id 已存在则先删除旧文档再写入，保证更新语义。
+     * 注意：Spring AI 的 Document 不允许 metadata 含 null 值，此处统一剔除 null 项
+     * （调用方可能传入 location/emotion 等为 null 的字段；检索侧对缺失 key 均有兜底）。
      */
     public void put(String id, String text, Map<String, Object> metadata) {
-        docs.put(id, new DocEntry(text, metadata));
-        vocabBuilt = false; // 词汇表需要重建
+        Map<String, Object> meta = new HashMap<>();
+        if (metadata != null) {
+            metadata.forEach((k, v) -> {
+                if (v != null) meta.put(k, v);
+            });
+        }
+        Document doc = new Document(id, text, meta);
+        Document previous = docIndex.put(id, doc);
+        if (previous != null) {
+            // 已存在同名 id，先从底层库删除旧版本
+            delegate.delete(List.of(id));
+        }
+        delegate.add(List.of(doc));
     }
 
     /**
-     * 检索最相似的 topK 个文档
+     * 检索与 query 最相似的 topK 个文档，按相似度降序返回。
+     * 返回的相似度为真实余弦相似度（约 [0,1]，相关越高越接近 1）。
      */
     public List<SearchResult> search(String query, int topK) {
-        if (docs.isEmpty()) {
+        if (docIndex.isEmpty()) {
             return Collections.emptyList();
         }
-
-        // 确保词汇表已构建
-        if (!vocabBuilt) {
-            buildVocabulary();
+        SearchRequest request = SearchRequest.builder()
+                .query(query)
+                .topK(topK)
+                .build();
+        List<Document> docs = delegate.similaritySearch(request);
+        if (docs == null || docs.isEmpty()) {
+            return Collections.emptyList();
         }
-
-        // 将查询转为向量
-        double[] queryVec = textToVector(query);
-
-        // 计算每个文档的余弦相似度
-        List<SearchResult> results = new ArrayList<>();
-        for (Map.Entry<String, double[]> entry : vectors.entrySet()) {
-            double similarity = cosineSimilarity(queryVec, entry.getValue());
-            if (similarity > 0) {
-                DocEntry doc = docs.get(entry.getKey());
-                results.add(new SearchResult(entry.getKey(), similarity, doc.text, doc.metadata));
-            }
-        }
-
-        // 按相似度降序排列，取 topK
-        results.sort((a, b) -> Double.compare(b.similarity, a.similarity));
-        return results.stream().limit(topK).collect(Collectors.toList());
+        return docs.stream()
+                .map(d -> new SearchResult(d.getId(),
+                        d.getScore() != null ? d.getScore() : 0.0,
+                        d.getText(), d.getMetadata()))
+                .collect(Collectors.toList());
     }
 
     /**
-     * 获取文档数量
+     * 获取文档数量。
      */
     public int size() {
-        return docs.size();
+        return docIndex.size();
     }
 
     /**
-     * 清空所有数据
+     * 清空所有数据。
      */
     public void clear() {
-        docs.clear();
-        vocabulary.clear();
-        vectors.clear();
-        vocabBuilt = false;
+        if (!docIndex.isEmpty()) {
+            delegate.delete(new ArrayList<>(docIndex.keySet()));
+            docIndex.clear();
+        }
     }
 
-    // ========== 私有方法 ==========
+    // ========== 对外结果结构（与旧实现保持兼容） ==========
 
     /**
-     * 构建词汇表
+     * 检索结果：调用方依赖的字段 id / similarity / text / metadata 全部保留。
      */
-    private void buildVocabulary() {
-        vocabulary.clear();
-        vectors.clear();
-
-        // 收集所有词
-        int idx = 0;
-        for (DocEntry doc : docs.values()) {
-            for (String word : tokenize(doc.text)) {
-                if (!vocabulary.containsKey(word)) {
-                    vocabulary.put(word, idx++);
-                }
-            }
-        }
-
-        // 为每个文档构建向量
-        for (Map.Entry<String, DocEntry> entry : docs.entrySet()) {
-            vectors.put(entry.getKey(), textToVector(entry.getValue().text));
-        }
-
-        vocabBuilt = true;
-    }
-
-    /**
-     * 文本转向量（词频向量）
-     */
-    private double[] textToVector(String text) {
-        double[] vec = new double[vocabulary.size()];
-        List<String> words = tokenize(text);
-        for (String word : words) {
-            Integer idx = vocabulary.get(word);
-            if (idx != null) {
-                vec[idx] += 1.0;
-            }
-        }
-        // L2 归一化
-        double norm = 0;
-        for (double v : vec) norm += v * v;
-        if (norm > 0) {
-            norm = Math.sqrt(norm);
-            for (int i = 0; i < vec.length; i++) vec[i] /= norm;
-        }
-        return vec;
-    }
-
-    /**
-     * 余弦相似度
-     */
-    private double cosineSimilarity(double[] a, double[] b) {
-        double dot = 0, normA = 0, normB = 0;
-        for (int i = 0; i < a.length; i++) {
-            dot += a[i] * b[i];
-            normA += a[i] * a[i];
-            normB += b[i] * b[i];
-        }
-        if (normA == 0 || normB == 0) return 0;
-        return dot / (Math.sqrt(normA) * Math.sqrt(normB));
-    }
-
-    /**
-     * 中文分词（简化：按字符 bigram + 单个词切分）
-     */
-    private List<String> tokenize(String text) {
-        if (text == null || text.isEmpty()) return Collections.emptyList();
-        List<String> tokens = new ArrayList<>();
-
-        // 按标点和空格切分
-        String[] segments = text.toLowerCase().split("[，。！？、；：\\s,.!?;:]+");
-        for (String seg : segments) {
-            seg = seg.trim();
-            if (seg.isEmpty()) continue;
-
-            // bigram 分词
-            for (int i = 0; i < seg.length() - 1; i++) {
-                tokens.add(seg.substring(i, i + 2));
-            }
-            // 单字也加入
-            for (char c : seg.toCharArray()) {
-                if (Character.isLetter(c) || Character.isDigit(c) || isChinese(c)) {
-                    tokens.add(String.valueOf(c));
-                }
-            }
-        }
-        return tokens;
-    }
-
-    private boolean isChinese(char c) {
-        return Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS
-                || Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A
-                || Character.UnicodeBlock.of(c) == Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS;
-    }
-
-    // ========== 内部类 ==========
-
-    static class DocEntry {
-        String text;
-        Map<String, Object> metadata;
-
-        DocEntry(String text, Map<String, Object> metadata) {
-            this.text = text;
-            this.metadata = metadata;
-        }
-    }
-
     public static class SearchResult {
         public String id;
         public double similarity;

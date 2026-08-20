@@ -98,7 +98,8 @@ public class StoryServiceImpl implements StoryService {
         List<Memory> relevant = new ArrayList<>();
 
         for (VectorStore.SearchResult r : vectorResults) {
-            if (r.similarity < 0.03) continue;
+            // 真实余弦相似度过滤：低于 0.10 视为无关，不纳入故事素材（原 0.03 为词频伪向量旧值）
+            if (r.similarity < 0.10) continue;
             String id = r.id.replace("mem_", "");
             try {
                 Long memId = Long.parseLong(id);
